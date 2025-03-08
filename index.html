@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      body {
+        margin: 0;
+        padding-bottom: 3rem;
+        font-family: sans-serif;
+      }
+
+      #form {
+        background: rgba(0, 0, 0, 0.15);
+        padding: 0.25rem;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        height: 3rem;
+        box-sizing: border-box;
+        backdrop-filter: blur(10px);
+      }
+      #input {
+        border: none;
+        padding: 0 1rem;
+        flex-grow: 1;
+        border-radius: 2rem;
+        margin: 0.25rem;
+      }
+      #input:focus {
+        outline: none;
+      }
+      #form > button {
+        background: #333;
+        border: none;
+        padding: 0 1rem;
+        margin: 0.25rem;
+        border-radius: 3px;
+        outline: none;
+        color: #fff;
+      }
+
+      #messages {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      #messages > li {
+        padding: 0.5rem 1rem;
+      }
+      #messages > li:nth-child(odd) {
+        background: #efefef;
+      }
+
+      #status {
+        position: fixed;
+        bottom: 40px;
+        left: 0;
+        right: 0;
+        padding: 0 10px;
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <p id="status"></p>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" /><button>Send</button>
+    </form>
+
+    <script>
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const status = document.getElementById("status");
+      const messages = document.getElementById("messages");
+    </script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js"
+      integrity="sha512-8ExARjWWkIllMlNzVg7JKq9RKWPlJABQUNq6YvAjE/HobctjH/NA+bSiDMDvouBVjp4Wwnf1VP1OEv7Zgjtuxw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script>
+      var socket = io("http://localhost:8000");
+
+      let user = prompt("Introduce tu nombre");
+
+      socket.emit("signin", { user: user });
+
+      socket.on("message", (msg) => {
+        console.log("mensaje recibido", msg);
+
+        let item = document.createElement("li");
+        item.textContent = "💬 " + msg.user + ": " + msg.message;
+        messages.appendChild(item);
+      });
+
+      socket.on("signin", (msg) => {
+        console.log("signin", msg);
+        let item = document.createElement("li");
+        item.textContent = "👨 " + msg.user + " se ha conectado";
+        messages.appendChild(item);
+      });
+
+      socket.on("logout", (msg) => {
+        let item = document.createElement("li");
+        item.textContent = "👨 " + msg.user + " se ha desconectado";
+        messages.appendChild(item);
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        console.log("form submit");
+        socket.emit("message", { user: user, message: input.value });
+      });
+
+      input.addEventListener("keydown", (e) => {
+        socket.emit("typing", { user: user });
+      });
+
+      socket.on("typing", (msg) => {
+        status.textContent = msg.user + " está escribiendo...";
+        setTimeout(() => {
+          status.textContent = "";
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>
